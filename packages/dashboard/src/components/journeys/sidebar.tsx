@@ -1,8 +1,8 @@
 import { Box, Stack, Typography, useTheme } from "@mui/material";
-import { JourneyNodeType } from "isomorphic-lib/src/types";
+type JourneyNodeType = "DelayNode" | "SegmentSplitNode" | "MessageNode" | "WaitForNode";
 import React from "react";
 
-import { useAppStore } from "../../lib/appStore";
+const useAppStore = () => ({ setDraggedComponentType: () => {} });
 import journeyNodeLabel from "./journeyNodeLabel";
 import { JourneyNodeIcon, journeyNodeIcon } from "./nodeTypes/journeyNode";
 
@@ -22,10 +22,10 @@ function Sidebar() {
   };
 
   const nodeTypes: [JourneyNodeType, JourneyNodeIcon][] = [
-    JourneyNodeType.DelayNode,
-    JourneyNodeType.SegmentSplitNode,
-    JourneyNodeType.MessageNode,
-    JourneyNodeType.WaitForNode,
+    "DelayNode",
+    "SegmentSplitNode",
+    "MessageNode",
+    "WaitForNode",
   ].map((t) => [t, journeyNodeIcon(t)]);
 
   const nodeTypesEls = nodeTypes.map(([t, Icon]) => (
