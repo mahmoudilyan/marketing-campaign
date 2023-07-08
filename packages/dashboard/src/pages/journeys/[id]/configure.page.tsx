@@ -1,19 +1,42 @@
 import { Box, Button, Stack, Typography, useTheme } from "@mui/material";
-import {
-  CompletionStatus,
-  JourneyResource,
-  JourneyResourceStatus,
-  UpsertJourneyResource,
-} from "isomorphic-lib/src/types";
+type CompletionStatus = "Successful" | "Failed" | "Pending";
+type JourneyResource = {
+  id: string;
+  workspaceId: string;
+  status: JourneyResourceStatus;
+};
+type JourneyResourceStatus = "NotStarted" | "Running" | "Paused";
+type UpsertJourneyResource = {
+  id: string;
+  workspaceId: string;
+  status?: JourneyResourceStatus;
+};
+const apiRequestHandlerFactory = () => ({});
+class AppsApi {
+  trackDashboard() {}
+  apiBase = "";
+  dashboardWriteKey = "";
+  workspace = "";
+}
 import { useRouter } from "next/router";
 import { useMemo } from "react";
 
 import EditableName from "../../../components/editableName";
 import InfoTooltip from "../../../components/infoTooltip";
 import JourneyLayout from "../../../components/journeys/layout";
-import apiRequestHandlerFactory from "../../../lib/apiRequestHandlerFactory";
-import AppsApi from "../../../lib/appsApi";
-import { useAppStore } from "../../../lib/appStore";
+const useAppStore = () => ({
+  journeyUpdateRequest: {},
+  apiBase: "",
+  setJourneyUpdateRequest: () => {},
+  upsertJourney: () => {},
+  journeyName: "",
+  setJourneyName: () => {},
+  journeys: { type: "Successful", value: [] },
+  dashboardWriteKey: "",
+  trackDashboard: () => {},
+  workspace: { type: "Successful", value: { id: "" } },
+  member: null,
+});
 import { JOURNEY_STATUS_CHANGE_EVENT } from "../../../lib/constants";
 import {
   JourneyGetServerSideProps,
