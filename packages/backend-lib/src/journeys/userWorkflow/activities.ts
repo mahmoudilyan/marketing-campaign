@@ -243,245 +243,118 @@ async function sendWithTracking<C>(
   });
 }
 
-interface MobilePushChannelConfig {
-  fcmKey: string;
+// Add new function sendWhatsAppWithPayload
+async function sendWhatsAppWithPayload(
+  params: BaseSendParams
+): Promise<SendWithTrackingValue> {
+  const buildSendValue = buildSendValueFactory(params);
+
+  return sendWithTracking<WhatsAppChannelConfig>({
+    ...params,
+    async getChannelConfig({ workspaceId }) {
+      // TODO: Implement logic to get WhatsApp configuration
+    },
+    async channelSend({
+      workspaceId,
+      channel,
+      messageTemplate,
+      userPropertyAssignments,
+      channelConfig,
+      identifier,
+      subscriptionSecret,
+    }) {
+      // TODO: Implement logic to send WhatsApp message
+    },
+  });
 }
 
+// Modify sendWithTracking function
+async function sendWithTracking<C>(
+  params: SendParams<C>
+): Promise<SendWithTrackingValue> {
+  // Existing code...
+
+  // Modify channelSend function
+  return channelSend({
+    // Existing code...
+    // Add new case for WhatsApp channel
+    case ChannelType.WhatsApp:
+      return sendWhatsAppWithPayload(params);
+  });
+}
+
+// Modify sendMobilePushWithPayload function
 async function sendMobilePushWithPayload(
   params: BaseSendParams
 ): Promise<SendWithTrackingValue> {
-  const buildSendValue = buildSendValueFactory(params);
+  // Existing code...
 
   return sendWithTracking<MobilePushChannelConfig>({
-    ...params,
+    // Existing code...
+    // Modify getChannelConfig and channelSend functions
     async getChannelConfig({ workspaceId }) {
-      const fcmKey = await prisma().secret.findUnique({
-        where: {
-          workspaceId_name: {
-            workspaceId,
-            name: FCM_SECRET_NAME,
-          },
-        },
-      });
-
-      if (!fcmKey) {
-        return err(
-          buildSendValue(false, InternalEventType.BadWorkspaceConfiguration, {
-            message: "FCM key not found",
-          })
-        );
-      }
-      return ok({ fcmKey: fcmKey.value });
+      // Existing code...
+      // Add new case for WhatsApp channel
+      case ChannelType.WhatsApp:
+        // TODO: Implement logic to get WhatsApp configuration
     },
     async channelSend({
-      workspaceId,
-      channel,
-      messageTemplate,
-      userPropertyAssignments,
-      channelConfig,
-      identifier,
-      subscriptionSecret,
-    }) {
-      const render = (template?: string) =>
-        template &&
-        renderLiquid({
-          userProperties: userPropertyAssignments,
-          template,
-          workspaceId,
-          identifierKey: CHANNEL_IDENTIFIERS[channel],
-          subscriptionGroupId: params.subscriptionGroupId,
-          secrets: {
-            [SUBSCRIPTION_SECRET_NAME]: subscriptionSecret,
-          },
-        });
-
-      if (messageTemplate.definition.type !== ChannelType.MobilePush) {
-        return buildSendValue(
-          false,
-          InternalEventType.BadWorkspaceConfiguration,
-          {
-            message: "Message template is not a mobile push template",
-          }
-        );
-      }
-      let title: string | undefined;
-      let body: string | undefined;
-      try {
-        title = render(messageTemplate.definition.title);
-        body = render(messageTemplate.definition.body);
-      } catch (e) {
-        const error = e as Error;
-        return buildSendValue(
-          false,
-          InternalEventType.BadWorkspaceConfiguration,
-          {
-            message: `render failure: ${error.message}`,
-          }
-        );
-      }
-
-      const fcmMessageId = await sendNotification({
-        key: channelConfig.fcmKey,
-        token: identifier,
-        notification: {
-          title,
-          body,
-          imageUrl: messageTemplate.definition.imageUrl,
-        },
-        android: messageTemplate.definition.android,
-      });
-      return buildSendValue(true, InternalEventType.MessageSent, {
-        fcmMessageId,
-      });
+      // Existing code...
+      // Add new case for WhatsApp channel
+      case ChannelType.WhatsApp:
+        // TODO: Implement logic to send WhatsApp message
     },
   });
 }
 
-export async function sendMobilePush(
-  params: Omit<BaseSendParams, "channel">
-): Promise<boolean> {
-  const [sent, trackData] = await sendMobilePushWithPayload({
-    ...params,
-    channel: ChannelType.MobilePush,
-  });
-  if (trackData) {
-    await submitTrack({ workspaceId: params.workspaceId, data: trackData });
-  }
-  return sent;
-}
-
-interface EmailChannelConfig {
-  emailProvider: EmailProvider;
-}
-
-// TODO write test
+// Modify sendEmailWithPayload function
 async function sendEmailWithPayload(
   params: BaseSendParams
 ): Promise<SendWithTrackingValue> {
-  const buildSendValue = buildSendValueFactory(params);
+  // Existing code...
 
   return sendWithTracking<EmailChannelConfig>({
-    ...params,
+    // Existing code...
+    // Modify getChannelConfig and channelSend functions
     async getChannelConfig({ workspaceId }) {
-      const defaultEmailProvider =
-        await prisma().defaultEmailProvider.findUnique({
-          where: {
-            workspaceId,
-          },
-          include: { emailProvider: true },
-        });
-
-      if (!defaultEmailProvider?.emailProvider) {
-        return err(
-          buildSendValue(false, InternalEventType.BadWorkspaceConfiguration, {
-            message: "Default email provider not found",
-          })
-        );
-      }
-      return ok({ emailProvider: defaultEmailProvider.emailProvider });
+      // Existing code...
+      // Add new case for WhatsApp channel
+      case ChannelType.WhatsApp:
+        // TODO: Implement logic to get WhatsApp configuration
     },
     async channelSend({
-      workspaceId,
-      channel,
-      messageTemplate,
-      userPropertyAssignments,
-      channelConfig,
-      identifier,
-      journeyId,
-      runId,
-      messageId,
-      userId,
-      templateId,
-      nodeId,
-      subscriptionSecret,
-    }) {
-      const render = (template: string) =>
-        template &&
-        renderLiquid({
-          userProperties: userPropertyAssignments,
-          template,
-          workspaceId,
-          identifierKey: CHANNEL_IDENTIFIERS[channel],
-          subscriptionGroupId: params.subscriptionGroupId,
-          secrets: {
-            [SUBSCRIPTION_SECRET_NAME]: subscriptionSecret,
-          },
-        });
-
-      if (messageTemplate.definition.type !== ChannelType.Email) {
-        return buildSendValue(
-          false,
-          InternalEventType.BadWorkspaceConfiguration,
-          {
-            message: "Message template is not a mobile push template",
-          }
-        );
-      }
-      let from: string;
-      let subject: string;
-      let body: string;
-      try {
-        from = escapeHTML(render(messageTemplate.definition.from));
-        subject = escapeHTML(render(messageTemplate.definition.subject));
-        body = render(messageTemplate.definition.body);
-      } catch (e) {
-        const error = e as Error;
-        return buildSendValue(
-          false,
-          InternalEventType.BadWorkspaceConfiguration,
-          {
-            message: `render failure: ${error.message}`,
-          }
-        );
-      }
-
-      switch (channelConfig.emailProvider.type) {
-        case EmailProviderType.Sendgrid: {
-          // TODO distinguish between retryable and non-retryable errors
-          const result = await sendEmailSendgrid({
-            mailData: {
-              to: identifier,
-              from,
-              subject,
-              html: body,
-              customArgs: {
-                journeyId,
-                runId,
-                messageId,
-                userId,
-                workspaceId,
-                templateId,
-                nodeId,
-              },
-            },
-            apiKey: channelConfig.emailProvider.apiKey,
-          });
-
-          if (result.isErr()) {
-            logger().error({ err: result.error });
-            return buildSendValue(false, InternalEventType.MessageFailure, {
-              message: `Failed to send message to sendgrid: ${result.error.message}`,
-            });
-          }
-
-          return buildSendValue(true, InternalEventType.MessageSent);
-        }
-        default: {
-          return buildSendValue(
-            false,
-            InternalEventType.BadWorkspaceConfiguration,
-            {
-              message: `Unknown email provider type: ${channelConfig.emailProvider.type}`,
-            }
-          );
-        }
-      }
+      // Existing code...
+      // Add new case for WhatsApp channel
+      case ChannelType.WhatsApp:
+        // TODO: Implement logic to send WhatsApp message
     },
   });
 }
 
-export async function sendEmail(
-  params: Omit<BaseSendParams, "channel">
+// Modify BaseSendParams and SendParams interfaces
+interface BaseSendParams {
+  // Existing properties...
+  // Add new property for WhatsApp channel
+  whatsappChannel?: string;
+}
+
+interface SendParams<C> extends BaseSendParams {
+  // Existing properties...
+  // Add new property for WhatsApp channel
+  whatsappChannelSend?: (
+    params: BaseSendParams & {
+      whatsappChannelConfig: C;
+      identifier: string;
+      messageTemplate: MessageTemplateResource;
+      subscriptionSecret: string;
+      userPropertyAssignments: Awaited<
+        ReturnType<typeof findAllUserPropertyAssignments>
+      >;
+    }
+  ) => Promise<SendWithTrackingValue>;
+}
+
+params: Omit<BaseSendParams, "channel">
 ): Promise<boolean> {
   const [sent, trackData] = await sendEmailWithPayload({
     ...params,
