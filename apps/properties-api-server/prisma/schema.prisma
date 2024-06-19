@@ -1,0 +1,66 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Owner {
+  createdAt  DateTime   @default(now())
+  email      String?
+  firstName  String?
+  id         String     @id @default(cuid())
+  lastName   String?
+  properties Property[]
+  updatedAt  DateTime   @updatedAt
+}
+
+model Tenant {
+  createdAt DateTime @default(now())
+  email     String?
+  firstName String?
+  id        String   @id @default(cuid())
+  lastName  String?
+  lease     Lease?   @relation(name: "LeaseOnTenants", fields: [leaseId], references: [id])
+  leaseId   String?
+  leases    Lease[]  @relation(name: "LeasesOnTenant")
+  updatedAt DateTime @updatedAt
+}
+
+model Lease {
+  createdAt  DateTime  @default(now())
+  endDate    DateTime?
+  id         String    @id @default(cuid())
+  property   Property? @relation(fields: [propertyId], references: [id])
+  propertyId String?
+  startDate  DateTime?
+  tenant     Tenant?   @relation(name: "LeasesOnTenant", fields: [tenantId], references: [id])
+  tenantId   String?
+  tenants    Tenant[]  @relation(name: "LeaseOnTenants")
+  updatedAt  DateTime  @updatedAt
+}
+
+model Property {
+  address   String?
+  createdAt DateTime @default(now())
+  id        String   @id @default(cuid())
+  leases    Lease[]
+  name      String?
+  owner     Owner?   @relation(fields: [ownerId], references: [id])
+  ownerId   String?
+  updatedAt DateTime @updatedAt
+}
+
+model User {
+  createdAt DateTime @default(now())
+  email     String?  @unique
+  firstName String?
+  id        String   @id @default(cuid())
+  lastName  String?
+  password  String
+  roles     Json
+  updatedAt DateTime @updatedAt
+  username  String   @unique
+}
